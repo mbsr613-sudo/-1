@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+        <title>תופס העוגיות! 🍪</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;600;800&display=swap" rel="stylesheet">
+        <style>
+            /* הגדרות עיצוב בסיסיות ופונט עברי שמח */
+            body {
+                font-family: 'Rubik', sans-serif;
+                margin: 0;
+                padding: 0;
+                overflow: hidden;
+                background: linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%);
+                touch-action: none; /* מניעת גלילה במובייל בזמן משחק */
+                user-select: none;
+            }
+    
+            #game-container {
+                position: relative;
+                width: 100vw;
+                height: 100vh;
+                max-width: 800px;
+                margin: 0 auto;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+                background: #87CEEB;
+                overflow: hidden;
+            }
+    
+            canvas {
+                display: block;
+                width: 100%;
+                height: 100%;
+            }
+    
+            /* אנימציות לכפתורים ומסכים */
+            .btn-bounce {
+                transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.15s ease;
+            }
+            .btn-bounce:hover {
+                transform: scale(1.05);
+            }
+            .btn-bounce:active {
+                transform: scale(0.95);
+            }
+    
+            @keyframes float {
+                0%, 100% { transform: translateY(0px); }
+                50% { transform: translateY(-8px); }
+            }
+            .floating {
+                animation: float 3s ease-in-out infinite;
+            }
+        </style>
+    </head>
+    <body>
+    
+    <div id="game-container">
+        <!-- קנבס המשחק -->
+        <canvas id="gameCanvas"></canvas>
+    
+        <!-- ממשק עליון (ניקוד, חיים, השתקה) -->
+        <div id="hud" class="hidden absolute top-3 left-3 right-3 flex justify-between items-center pointer-events-none z-10">
+            <!-- ניקוד ושיא -->
+            <div class="flex gap-2">
+                <div class="bg-white/90 backdrop-blur-sm px-4 py-1.5 rounded-2xl shadow-md border-2 border-amber-400 flex items-center gap-2">
+                    <span class="text-xl">🍪</span>
+                    <div>
+                        <div class="text-[10px] text-amber-800 font-bold leading-none">עוגיות שהוצלו</div>
+                        <div id="scoreDisplay" class="text-lg font-extrabold text-amber-900 leading-tight">0</div>
+                    </div>
+                </div>
+                <div class="bg-white/80 backdrop-blur-sm px-3 py-1.5 rounded-2xl shadow-md border-2 border-amber-200 hidden sm:flex items-center gap-1.5">
+                    <span class="text-lg">🏆</span>
+                    <div>
+                        <div class="text-[10px] text-amber-700 font-bold leading-none">שיא</div>
+                        <div id="highScoreDisplay" class="text-sm font-bold text-amber-900 leading-tight">0</div>
+                    </div>
+                </div>
+            </div>
+    
+            <!-- חיים וכפתור סאונד -->
+            <div class="flex items-center gap-2 pointer-events-auto">
+                <div id="livesDisplay" class="bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-2xl shadow-md border-2 border-red-300 text-lg tracking-widest">
+                    ❤️❤️❤️
+                </div>
+                <button id="soundToggleBtn" type="button" class="btn-bounce bg-white/90 backdrop-blur-sm p-2.5 rounded-2xl shadow-md border-2 border-amber-300 text-amber-900 hover:bg-amber-50 cursor-pointer" title="השתק / הפעל צלילים">
+                    🔊
+                </button>
+            </div>
+        </div>
+    
+        <!-- מסך פתיחה -->
+        <div id="startScreen" class="absolute inset-0 bg-amber-950/60 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center z-20">
+            <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border-4 border-amber-400">
+                <div class="flex items-center justify-center gap-4 mb-3 floating">
+                    <div class="relative">
+                        <img id="startThrowerImg" src="" alt="זורקת העוגיות" onerror="this.style.display='none'" class="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover border-4 border-pink-400 shadow-md bg-amber-100">
+                        <span class="absolute -bottom-1 -right-1 text-xl bg-white rounded-full px-1 shadow">🧋</span>
+                    </div>
+                    <span class="text-3xl">🍪➡️</span>
+                    <div class="relative">
+                        <img id="startCatcherImg" src="" alt="תופסת העוגיות" onerror="this.style.display='none'" class="h-20 w-auto object-contain">
+                    </div>
+                </div>
+                <h1 class="text-3xl sm:text-4xl font-extrabold text-amber-900 mb-2">תופס העוגיות!</h1>
+                <p class="text-amber-800 text-sm sm:text-base mb-4">
+                    היא נהנית מהאייס קפה במרפסת וזורקת עוגיות נוטלה בלי הפסקה! עזרו לתפוס אותן לפני שייפלו לרצפה.
+                </p>
+    
+                <!-- מקרא פריטים -->
+                <div class="bg-amber-50 rounded-2xl p-3.5 mb-6 text-right border border-amber-200 space-y-2 text-sm">
+                    <div class="flex items-center justify-between">
+                        <span class="flex items-center gap-2 font-semibold text-gray-900">
+                            <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-900 border-2 border-red-500 shadow-inner relative">
+                                <span class="w-1 h-1 rounded-full bg-gray-500 absolute top-1 left-1.5"></span>
+                                <span class="w-1 h-1 rounded-full bg-gray-500 absolute bottom-1 right-1.5"></span>
+                                <span class="w-1 h-1 rounded-full bg-gray-500 absolute top-2.5 right-1"></span>
+                            </span>
+                     עוגיות קוואקר
+                        </span>
+                        <span class="bg-red-100 text-red-800 font-bold px-2 py-0.5 rounded-lg">תפיסה = -1 ❤️</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="flex items-center gap-2 font-semibold text-amber-900"><span class="text-xl">🗑️</span> עוגיית נוטלה נזרקה לפח</span>
+                        <span class="bg-amber-100 text-amber-900 font-bold px-2 py-0.5 rounded-lg">3 פעמים = פסילה!</span>
+                    </div>
+                </div>
+    
+                <div class="text-xs text-gray-500 mb-4">
+                    🎮 שליטה: חיצי מקלדת, הזזת עכבר או גרירה באצבע
+                </div>
+    
+                <button id="startBtn" type="button" onclick="if(typeof startGame === 'function') startGame();" class="btn-bounce w-full bg-gradient-to-b from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-amber-950 font-extrabold text-base sm:text-lg py-3.5 px-5 rounded-2xl shadow-lg border-b-4 border-amber-700 cursor-pointer leading-snug">
+                 תפסו מהר את העוגיות נוטלה לפני ששיראל תזרוק אותם לפח
+                </button>
+            </div>
+        </div>
+    
+        <!-- מסך סיום משחק -->
+        <div id="gameOverScreen" class="hidden absolute inset-0 bg-amber-950/70 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center z-20">
+            <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border-4 border-red-400">
+                <div class="flex justify-center mb-2">
+                    <img id="gameOverCatcherImg" src="" alt="תופסת העוגיות" onerror="this.style.display='none'" class="h-24 w-auto object-contain">
+                </div>
+                <h2 class="text-3xl font-extrabold text-red-600 mb-1">אוי, לא הספקת להגיע לחווה</h2>
+                <p id="gameOverReason" class="text-gray-600 text-sm mb-5">העוגיות היו כבר שלושה ימים בהקפאה ושיראל אותם כבר זרקה...</p>
+    
+                <div class="grid grid-cols-2 gap-3 mb-6">
+                    <div class="bg-amber-50 p-3 rounded-2xl border-2 border-amber-200">
+                        <div class="text-xs text-amber-700 font-bold">עוגיות נוטלה שהוצלו</div>
+                        <div id="finalScore" class="text-3xl font-extrabold text-amber-900">0</div>
+                    </div>
+                    <div class="bg-yellow-50 p-3 rounded-2xl border-2 border-yellow-300">
+                        <div class="text-xs text-yellow-700 font-bold">כמות העוגיות הגבוהה ביותר שהצלת🏆</div>
+                        <div id="finalHighScore" class="text-3xl font-extrabold text-yellow-800">0</div>
+                    </div>
+                </div>
+    
+                <button id="restartBtn" type="button" class="btn-bounce w-full bg-gradient-to-b from-green-400 to-green-500 hover:from-green-500 hover:to-green-600 text-white font-extrabold text-xl py-3.5 px-6 rounded-2xl shadow-lg border-b-4 border-green-700 cursor-pointer">
+                    שחק שוב 🔄
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+    // =========================================================================
+    // 🖼️ הגדרות תמונות הדמויות והרקע — כאן אפשר להחליף בקלות לקישור (URL) או שם קובץ!
+    // =========================================================================
+    const CHARACTER_IMAGES = {
+        // תמונת הדמות למעלה במרפסת (זורקת העוגיות עם האייס קפה):
+        thrower: 'thrower.jpeg',
+    
+        // תמונת הדמות למטה (תופסת העוגיות):
+        catcher: 'catcher.png',
+    
+        // תמונת הרקע של המשחק (הגבעה והחווה):
+        background: 'farm-background.jpeg'
+    };
+    // =========================================================================
+    
+    // אתחול אלמנטים מהדף
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const container = document.getElementById('game-container');
+    
+    const hud = document.getElementById('hud');
+    const scoreDisplay = document.getElementById('scoreDisplay');
+    const highScoreDisplay = document.getElementById('highScoreDisplay');
+    const livesDisplay = document.getElementById('livesDisplay');
+    
+    const startScreen = document.getElementById('startScreen');
+    const gameOverScreen = document.getElementById('gameOverScreen');
+    const startBtn = document.getElementById('startBtn');
+    const restartBtn = document.getElementById('restartBtn');
+    const soundToggleBtn = document.getElementById('soundToggleBtn');
+    const finalScoreEl = document.getElementById('finalScore');
+    const finalHighScoreEl = document.getElementById('finalHighScore');
+    const gameOverReasonEl = document.getElementById('gameOverReason');
+    
+    // תמונות הדמויות והרקע
+    const throwerImg = new Image();
+    const catcherImg = new Image();
+    const backgroundImg = new Image();
+    
+    backgroundImg.onload = () => {
+        if (gameState !== 'PLAYING') draw();
+    };
+    
+    function updateCharacterImages() {
+        throwerImg.src = CHARACTER_IMAGES.thrower;
+        catcherImg.src = CHARACTER_IMAGES.catcher;
+    
+        let savedBg = null;
+        try {
+            savedBg = localStorage.getItem('cookieCatcherCustomBg');
+        } catch (e) {}
+        backgroundImg.src = savedBg || CHARACTER_IMAGES.background;
+    
+        const startThrowerEl = document.getElementById('startThrowerImg');
+        const startCatcherEl = document.getElementById('startCatcherImg');
+        const gameOverCatcherEl = document.getElementById('gameOverCatcherImg');
+    
+        if (startThrowerEl) {
+            startThrowerEl.style.display = '';
+            startThrowerEl.src = CHARACTER_IMAGES.thrower;
+        }
+        if (startCatcherEl) {
+            startCatcherEl.style.display = '';
+            startCatcherEl.src = CHARACTER_IMAGES.catcher;
+        }
+        if (gameOverCatcherEl) {
+            gameOverCatcherEl.style.display = '';
+            gameOverCatcherEl.src = CHARACTER_IMAGES.catcher;
+        }
+    }
+    
+    // משתני מצב משחק
+    let gameState = 'START'; // 'START', 'PLAYING', 'GAMEOVER'
+    let score = 0;
+    let highScore = 0;
+    try {
+        highScore = parseInt(localStorage.getItem('cookieCatcherHighScore') || '0', 10);
+    } catch (e) {
+        highScore = 0;
+    }
+    let lives = 3;
+    let soundEnabled = true;
+    let animationFrameId = null;
+    let lastTime = 0;
+    
+    // ישויות המשחק
+    const baker = {
+        x: 0,
+        y: 78,
+        width: 72,
+        height: 72,
+        vx: 165,
+        throwAnim: 0,
+        nextThrowTimer: 1.0
+    };
+    
+    const player = {
+        x: 0,
+        width: 118,
+        height: 24,
+        speed: 520,
+        movingLeft: false,
+        movingRight: false,
+        catchBounce: 0
+    };
+    
+    let fallingItems = [];
+    let floatingTexts = [];
+    let particles = [];
+    
+    // מערכת סאונד (Web Audio API)
+    let audioCtx = null;
+    
+    function initAudio() {
+        try {
+            if (!audioCtx) {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (AudioContextClass) {
+                    audioCtx = new AudioContextClass();
+                }
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        } catch (e) {
+            console.warn('Audio init skipped:', e);
+        }
+    }
+    
+    function playSound(type) {
+        if (!soundEnabled || !audioCtx) return;
+        try {
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+    
+            if (type === 'catch') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(520, now);
+                osc.frequency.exponentialRampToValueAtTime(880, now + 0.12);
+                gain.gain.setValueAtTime(0.18, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.14);
+                osc.start(now);
+                osc.stop(now + 0.14);
+            } else if (type === 'throw') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(340, now);
+                osc.frequency.exponentialRampToValueAtTime(220, now + 0.08);
+                gain.gain.setValueAtTime(0.08, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.09);
+                osc.start(now);
+                osc.stop(now + 0.09);
+            } else if (type === 'hurt') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(200, now);
+                osc.frequency.linearRampToValueAtTime(95, now + 0.28);
+                gain.gain.setValueAtTime(0.22, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                osc.start(now);
+                osc.stop(now + 0.3);
+            } else if (type === 'gameover') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(330, now);
+                osc.frequency.setValueAtTime(277, now + 0.18);
+                osc.frequency.setValueAtTime(220, now + 0.36);
+                gain.gain.setValueAtTime(0.22, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.65);
+                osc.start(now);
+                osc.stop(now + 0.65);
+            }
+        } catch (e) {
+            // התעלמות משגיאות סאונד בדפדפן
+        }
+    }
+    
+    // התאמת גודל הקנבס למסך
+    function resizeCanvas() {
+        canvas.width = container.clientWidth || window.innerWidth;
+        canvas.height = container.clientHeight || window.innerHeight;
+    
+        if (player.x === 0) {
+            player.x = canvas.width / 2;
+        } else {
+            player.x = Math.max(player.width / 2, Math.min(canvas.width - player.width / 2, player.x));
+        }
+    
+        if (baker.x === 0) {
+            baker.x = canvas.width / 2;
+        } else {
+            baker.x = Math.max(55, Math.min(canvas.width - 55, baker.x));
+        }
+    
+        if (gameState !== 'PLAYING') {
+            draw();
+        }
+    }
+    
+    window.addEventListener('resize', resizeCanvas);
+    
+    // עדכון ממשק המשתמש
+    function updateHUD() {
+        scoreDisplay.textContent = score;
+        highScoreDisplay.textContent = highScore;
+        let hearts = '';
+        for (let i = 0; i < 3; i++) {
+            hearts += i < lives ? '❤️' : '🖤';
+        }
+        livesDisplay.textContent = hearts;
+    }
+    
+    // יצירת עוגייה נופלת
+    function spawnItem() {
+        // כ-25% עוגיית קוואקר שחורה, כ-75% עוגיית יומיים במקפיא
+        const isQuaker = Math.random() < 0.25;
+        const difficultyMultiplier = 1 + Math.min(score * 0.03, 1.3);
+    
+        fallingItems.push({
+            x: baker.x,
+            y: baker.y + 38,
+            vx: (Math.random() - 0.5) * 90,
+            vy: (185 + Math.random() * 65) * difficultyMultiplier,
+            radius: 23,
+            type: isQuaker ? 'quaker' : 'freezer',
+            rotation: (Math.random() - 0.5) * 0.3,
+            rotSpeed: (Math.random() - 0.5) * 1.4
+        });
+    
+        baker.throwAnim = 1;
+        playSound('throw');
+    }
+    
+    function addFloatingText(x, y, text, color) {
+        floatingTexts.push({
+            x,
+            y,
+            text,
+            color,
+            alpha: 1,
+            vy: -55
+        });
+    }
+    
+    function addParticles(x, y, color, count = 10) {
+        for (let i = 0; i < count; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = 50 + Math.random() * 130;
+            particles.push({
+                x,
+                y,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed - 40,
+                radius: 3 + Math.random() * 3,
+                color,
+                alpha: 1
+            });
+        }
+    }
+    
+    function handleItemCatch(item) {
+        player.catchBounce = 1;
+    
+        if (item.type === 'freezer') {
+            score += 1;
+            if (score > highScore) {
+                highScore = score;
+                try {
+                    localStorage.setItem('cookieCatcherHighScore', highScore.toString());
+                } catch (e) {}
+            }
+            playSound('catch');
+            addFloatingText(item.x, item.y - 12, '+1 🍪', '#15803D');
+            addParticles(item.x, item.y, '#D97706', 12);
+        } else if (item.type === 'quaker') {
+            lives -= 1;
+            playSound('hurt');
+            addFloatingText(item.x, item.y - 12, '-1 🖤 עוגיית קוואקר!', '#374151');
+            addParticles(item.x, item.y, '#1F2937', 14);
+            if (lives <= 0) {
+                updateHUD();
+                triggerGameOver('תפסת יותר מדי עוגיות קוואקר שחורות...');
+                return;
+            }
+        }
+    
+        updateHUD();
+    }
+    
+    function handleItemMiss(item) {
+        if (item.type === 'freezer') {
+            lives -= 1;
+            playSound('hurt');
+            addFloatingText(item.x, canvas.height - 45, 'עוגיית נוטלה נזרקה לפח!', '#B91C1C');
+            addParticles(item.x, canvas.height - 24, '#92400E', 10);
+            updateHUD();
+    
+            if (lives <= 0) {
+                triggerGameOver('3 עוגיות נוטלה נזרקו לפח...');
+            }
+        } else {
+            // עוגיית קוואקר שנפלה לרצפה מתנפצת בלי להוריד חיים
+            addParticles(item.x, canvas.height - 24, '#374151', 8);
+        }
+    }
+    
+    // עדכון לוגיקת המשחק
+    function update(dt) {
+        // תנועת הזורקת במרפסת
+        const difficultySpeed = 1 + Math.min(score * 0.025, 1.1);
+        baker.x += baker.vx * difficultySpeed * dt;
+    
+        if (baker.x < 55) {
+            baker.x = 55;
+            baker.vx = Math.abs(baker.vx);
+        } else if (baker.x > canvas.width - 55) {
+            baker.x = canvas.width - 55;
+            baker.vx = -Math.abs(baker.vx);
+        }
+    
+        if (baker.throwAnim > 0) {
+            baker.throwAnim = Math.max(0, baker.throwAnim - dt * 4);
+        }
+    
+        // טיימר זריקת עוגייה הבאה
+        baker.nextThrowTimer -= dt;
+        if (baker.nextThrowTimer <= 0) {
+            spawnItem();
+            const minInterval = Math.max(0.52, 1.15 - score * 0.02);
+            const maxInterval = Math.max(0.85, 1.65 - score * 0.025);
+            baker.nextThrowTimer = minInterval + Math.random() * (maxInterval - minInterval);
+        }
+    
+        // תנועת השחקנית למטה
+        if (player.movingLeft) {
+            player.x -= player.speed * dt;
+        }
+        if (player.movingRight) {
+            player.x += player.speed * dt;
+        }
+        player.x = Math.max(player.width / 2, Math.min(canvas.width - player.width / 2, player.x));
+    
+        if (player.catchBounce > 0) {
+            player.catchBounce = Math.max(0, player.catchBounce - dt * 5);
+        }
+    
+        // אזור התפיסה נמצא בגובה הידיים והחזה, לא בגובה הבטן.
+        const catcherBounds = getCatcherBounds();
+        const catchHalfW = Math.min(player.width / 2, catcherBounds.width * 0.4);
+    
+        for (let i = fallingItems.length - 1; i >= 0; i--) {
+            const item = fallingItems[i];
+            item.x += item.vx * dt;
+            item.y += item.vy * dt;
+            item.rotation += item.rotSpeed * dt;
+    
+            // החזרה מקירות הצד
+            if (item.x < item.radius + 8) {
+                item.x = item.radius + 8;
+                item.vx = Math.abs(item.vx);
+            } else if (item.x > canvas.width - item.radius - 8) {
+                item.x = canvas.width - item.radius - 8;
+                item.vx = -Math.abs(item.vx);
+            }
+    
+            // בדיקת תפיסה במגע עם פלג הגוף העליון
+            if (
+                item.y + item.radius >= catcherBounds.catchTop &&
+                item.y - item.radius <= catcherBounds.catchBottom &&
+                item.x + item.radius >= player.x - catchHalfW &&
+                item.x - item.radius <= player.x + catchHalfW
+            ) {
+                fallingItems.splice(i, 1);
+                handleItemCatch(item);
+                if (gameState !== 'PLAYING') return;
+                continue;
+            }
+    
+            // בדיקת נפילה לרצפה
+            if (item.y - item.radius > canvas.height - 22) {
+                fallingItems.splice(i, 1);
+                handleItemMiss(item);
+                if (gameState !== 'PLAYING') return;
+            }
+        }
+    
+        // עדכון טקסטים צפים
+        for (let i = floatingTexts.length - 1; i >= 0; i--) {
+            const ft = floatingTexts[i];
+            ft.y += ft.vy * dt;
+            ft.alpha -= dt * 1.1;
+            if (ft.alpha <= 0) {
+                floatingTexts.splice(i, 1);
+            }
+        }
+    
+        // עדכון חלקיקים
+        for (let i = particles.length - 1; i >= 0; i--) {
+            const p = particles[i];
+            p.x += p.vx * dt;
+            p.y += p.vy * dt;
+            p.vy += 260 * dt;
+            p.alpha -= dt * 1.8;
+            if (p.alpha <= 0) {
+                particles.splice(i, 1);
+            }
+        }
+    }
+    
+    // פונקציות ציור
+    function drawIllustratedFarmFallback() {
+        const w = canvas.width;
+        const h = canvas.height;
+        const horizonY = h * 0.56;
+        const scale = w / 800;
+
+        const skyGrad = ctx.createLinearGradient(0, 0, 0, horizonY);
+        skyGrad.addColorStop(0, '#78C6F5');
+        skyGrad.addColorStop(0.72, '#B9E4F3');
+        skyGrad.addColorStop(1, '#F7DDB0');
+        ctx.fillStyle = skyGrad;
+        ctx.fillRect(0, 0, w, h);
+
+        const sunX = w * 0.78;
+        const sunY = h * 0.17;
+        const sunRadius = Math.min(w, h) * 0.065;
+        const sunGlow = ctx.createRadialGradient(sunX, sunY, sunRadius * 0.2, sunX, sunY, sunRadius * 2.2);
+        sunGlow.addColorStop(0, 'rgba(255, 246, 202, 0.95)');
+        sunGlow.addColorStop(1, 'rgba(255, 246, 202, 0)');
+        ctx.fillStyle = sunGlow;
+        ctx.fillRect(sunX - sunRadius * 2.2, sunY - sunRadius * 2.2, sunRadius * 4.4, sunRadius * 4.4);
+        ctx.fillStyle = '#FFF1B8';
+        ctx.beginPath();
+        ctx.arc(sunX, sunY, sunRadius, 0, Math.PI * 2);
+        ctx.fill();
+
+        function drawCloud(x, y, size) {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.76)';
+            ctx.beginPath();
+            ctx.arc(x, y, size * 0.34, Math.PI, 0);
+            ctx.arc(x + size * 0.34, y - size * 0.13, size * 0.43, Math.PI, 0);
+            ctx.arc(x + size * 0.76, y, size * 0.3, Math.PI, 0);
+            ctx.lineTo(x + size * 1.06, y + size * 0.2);
+            ctx.lineTo(x - size * 0.34, y + size * 0.2);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        drawCloud(w * 0.16, h * 0.2, w * 0.11);
+        drawCloud(w * 0.48, h * 0.12, w * 0.08);
+
+        ctx.fillStyle = '#9BB8BD';
+        ctx.beginPath();
+        ctx.moveTo(0, horizonY);
+        ctx.lineTo(w * 0.13, h * 0.31);
+        ctx.lineTo(w * 0.24, h * 0.4);
+        ctx.lineTo(w * 0.39, h * 0.2);
+        ctx.lineTo(w * 0.55, h * 0.4);
+        ctx.lineTo(w * 0.7, h * 0.27);
+        ctx.lineTo(w * 0.84, h * 0.4);
+        ctx.lineTo(w, h * 0.29);
+        ctx.lineTo(w, horizonY);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = '#789B78';
+        ctx.beginPath();
+        ctx.moveTo(0, h * 0.52);
+        ctx.quadraticCurveTo(w * 0.26, h * 0.45, w * 0.48, h * 0.53);
+        ctx.quadraticCurveTo(w * 0.76, h * 0.45, w, h * 0.51);
+        ctx.lineTo(w, h);
+        ctx.lineTo(0, h);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = '#B99A68';
+        ctx.beginPath();
+        ctx.moveTo(0, h * 0.59);
+        ctx.quadraticCurveTo(w * 0.23, h * 0.55, w * 0.43, h * 0.6);
+        ctx.quadraticCurveTo(w * 0.69, h * 0.65, w, h * 0.55);
+        ctx.lineTo(w, h);
+        ctx.lineTo(0, h);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.strokeStyle = 'rgba(112, 132, 72, 0.36)';
+        ctx.lineWidth = Math.max(1, 2 * scale);
+        for (let i = 0; i < 4; i++) {
+            const y = h * (0.73 + i * 0.055);
+            ctx.beginPath();
+            ctx.moveTo(w * 0.08, y);
+            ctx.quadraticCurveTo(w * 0.48, y - h * 0.035, w * 0.92, y + h * 0.01);
+            ctx.stroke();
+        }
+
+        const barnW = w * 0.17;
+        const barnH = h * 0.14;
+        const barnX = w * 0.79;
+        const barnBaseY = h * 0.56;
+        const barnY = barnBaseY - barnH;
+
+        ctx.fillStyle = 'rgba(73, 58, 42, 0.18)';
+        ctx.beginPath();
+        ctx.ellipse(barnX + barnW * 0.5, barnBaseY + 4 * scale, barnW * 0.66, 7 * scale, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        const barnGrad = ctx.createLinearGradient(barnX, barnY, barnX + barnW, barnBaseY);
+        barnGrad.addColorStop(0, '#D96F50');
+        barnGrad.addColorStop(1, '#A94338');
+        ctx.fillStyle = barnGrad;
+        ctx.fillRect(barnX, barnY, barnW, barnH);
+
+        ctx.fillStyle = '#713A3A';
+        ctx.beginPath();
+        ctx.moveTo(barnX - barnW * 0.09, barnY + 2 * scale);
+        ctx.lineTo(barnX + barnW * 0.5, barnY - barnH * 0.42);
+        ctx.lineTo(barnX + barnW * 1.09, barnY + 2 * scale);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = '#EFE0BC';
+        ctx.fillRect(barnX + barnW * 0.1, barnY + barnH * 0.36, barnW * 0.8, 3 * scale);
+        ctx.fillRect(barnX + barnW * 0.1, barnBaseY - 5 * scale, barnW * 0.8, 3 * scale);
+        ctx.fillRect(barnX + barnW * 0.48, barnY + barnH * 0.36, 3 * scale, barnH * 0.64);
+
+        ctx.fillStyle = '#6C4739';
+        ctx.fillRect(barnX + barnW * 0.36, barnBaseY - barnH * 0.57, barnW * 0.28, barnH * 0.57);
+        ctx.strokeStyle = '#F0D8AC';
+        ctx.lineWidth = 2 * scale;
+        ctx.strokeRect(barnX + barnW * 0.36, barnBaseY - barnH * 0.57, barnW * 0.28, barnH * 0.57);
+        ctx.beginPath();
+        ctx.moveTo(barnX + barnW * 0.36, barnBaseY - barnH * 0.3);
+        ctx.lineTo(barnX + barnW * 0.64, barnBaseY - barnH * 0.3);
+        ctx.stroke();
+
+        ctx.fillStyle = '#FFE69A';
+        ctx.fillRect(barnX + barnW * 0.15, barnY + barnH * 0.48, barnW * 0.13, barnH * 0.14);
+        ctx.fillRect(barnX + barnW * 0.72, barnY + barnH * 0.48, barnW * 0.13, barnH * 0.14);
+        ctx.strokeStyle = '#F0D8AC';
+        ctx.lineWidth = 2 * scale;
+        ctx.strokeRect(barnX + barnW * 0.15, barnY + barnH * 0.48, barnW * 0.13, barnH * 0.14);
+        ctx.strokeRect(barnX + barnW * 0.72, barnY + barnH * 0.48, barnW * 0.13, barnH * 0.14);
+    }
+    
+    function drawBackground() {
+        if (backgroundImg.complete && backgroundImg.naturalWidth > 0) {
+            const imgRatio = backgroundImg.naturalWidth / backgroundImg.naturalHeight;
+            const canvasRatio = canvas.width / canvas.height;
+            let drawW, drawH, offsetX, offsetY;
+    
+            if (canvasRatio > imgRatio) {
+                drawW = canvas.width;
+                drawH = canvas.width / imgRatio;
+                offsetX = 0;
+                offsetY = (canvas.height - drawH) * 0.5;
+            } else {
+                drawH = canvas.height;
+                drawW = canvas.height * imgRatio;
+                offsetX = (canvas.width - drawW) * 0.5;
+                offsetY = 0;
+            }
+    
+            ctx.drawImage(backgroundImg, offsetX, offsetY, drawW, drawH);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.14)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        } else {
+            drawIllustratedFarmFallback();
+        }
+    
+        // כיתוב "החווה של שיראל" על הרקע
+        ctx.save();
+        const titleY = canvas.height * 0.61;
+        ctx.font = '800 32px Rubik';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.lineWidth = 6;
+        ctx.strokeStyle = 'rgba(120, 53, 15, 0.65)';
+        ctx.strokeText('החווה של שיראל', canvas.width / 2, titleY);
+        ctx.fillStyle = 'rgba(255, 251, 235, 0.9)';
+        ctx.fillText('החווה של שיראל', canvas.width / 2, titleY);
+        ctx.restore();
+    
+        // קרקע עדינה בתחתית המסך
+        ctx.fillStyle = 'rgba(68, 64, 60, 0.72)';
+        ctx.fillRect(0, canvas.height - 22, canvas.width, 22);
+        ctx.fillStyle = 'rgba(168, 162, 158, 0.85)';
+        ctx.fillRect(0, canvas.height - 22, canvas.width, 4);
+    }
+    
+    function drawBakerAndBalcony() {
+        // דמות זורקת העוגיות בשמיים בלי מרפסת
+        ctx.save();
+        const bobOffset = Math.sin(Date.now() * 0.008) * 3 - baker.throwAnim * 6;
+        const cx = baker.x;
+        const cy = baker.y + 12 + bobOffset;
+        const r = 34;
+    
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.save();
+        ctx.clip();
+    
+        if (throwerImg.complete && throwerImg.naturalWidth > 0) {
+            ctx.drawImage(throwerImg, cx - r, cy - r, r * 2, r * 2);
+        } else {
+            ctx.fillStyle = '#FBCFE8';
+            ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
+            ctx.font = '34px Rubik';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('🧋', cx, cy);
+        }
+        ctx.restore();
+    
+        ctx.lineWidth = 3.5;
+        ctx.strokeStyle = '#F472B6';
+        ctx.stroke();
+    
+        // אייקון אייס קפה לידה
+        ctx.font = '22px Rubik';
+        ctx.textAlign = 'center';
+        ctx.fillText('🧋', cx + 32, cy + 6 - baker.throwAnim * 5);
+        ctx.restore();
+    }
+    
+    function drawFallingItems() {
+        for (const item of fallingItems) {
+            ctx.save();
+            ctx.translate(item.x, item.y);
+            ctx.rotate(item.rotation * 0.35);
+    
+            const r = item.radius;
+    
+            if (item.type === 'freezer') {
+                // עוגיית שוקולד צ'יפס "יומיים במקפיא"
+                ctx.beginPath();
+                ctx.arc(0, 0, r, 0, Math.PI * 2);
+                ctx.fillStyle = '#D97706';
+                ctx.fill();
+                ctx.lineWidth = 2.5;
+                ctx.strokeStyle = '#92400E';
+                ctx.stroke();
+    
+                // פצפוצי שוקולד
+                ctx.fillStyle = '#451A03';
+                const chips = [
+                    [-10, -10], [10, -9], [-12, 8], [11, 9], [0, -14], [0, 14]
+                ];
+                for (const [cx, cy] of chips) {
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, 2.6, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+    
+                // תווית "יומיים במקפיא"
+                ctx.fillStyle = 'rgba(255, 251, 235, 0.94)';
+                ctx.beginPath();
+                ctx.roundRect(-27, -9, 54, 18, 6);
+                ctx.fill();
+                ctx.strokeStyle = '#B45309';
+                ctx.lineWidth = 1.2;
+                ctx.stroke();
+    
+                ctx.fillStyle = '#78350F';
+                ctx.font = 'bold 8.5px Rubik';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('יומיים במקפיא', 0, 0.5);
+            } else {
+                // עוגיית קוואקר שחורה
+                ctx.beginPath();
+                ctx.arc(0, 0, r, 0, Math.PI * 2);
+                ctx.fillStyle = '#18181B';
+                ctx.fill();
+                ctx.lineWidth = 2.5;
+                ctx.strokeStyle = '#EF4444';
+                ctx.stroke();
+    
+                // פצפוצים כהים
+                ctx.fillStyle = '#3F3F46';
+                const darkChips = [
+                    [-10, -10], [10, -9], [-11, 9], [11, 9], [0, -14]
+                ];
+                for (const [cx, cy] of darkChips) {
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, 2.5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+    
+                // תווית "עוגיות קוואקר"
+                ctx.fillStyle = 'rgba(254, 226, 226, 0.95)';
+                ctx.beginPath();
+                ctx.roundRect(-27, -9, 54, 18, 6);
+                ctx.fill();
+                ctx.strokeStyle = '#DC2626';
+                ctx.lineWidth = 1.2;
+                ctx.stroke();
+    
+                ctx.fillStyle = '#991B1B';
+                ctx.font = 'bold 8.5px Rubik';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('עוגית קוואקר', 0, 0.5);
+            }
+    
+            ctx.restore();
+        }
+    }
+    
+    function getCatcherBounds() {
+        const height = Math.min(canvas.height * 0.18, 150);
+        const aspectRatio = catcherImg.naturalHeight > 0
+            ? catcherImg.naturalWidth / catcherImg.naturalHeight
+            : 400 / 440;
+        const width = height * aspectRatio;
+        const imageTop = canvas.height - 22 - player.catchBounce * 6 - height;
+        return {
+            imageTop,
+            imageLeft: player.x - width / 2,
+            width,
+            height,
+            catchTop: imageTop + height * 0.08,
+            catchBottom: imageTop + height * 0.55
+        };
+    }
+
+    function drawPlayer() {
+        const catcherBounds = getCatcherBounds();
+        if (catcherImg.complete && catcherImg.naturalWidth > 0) {
+            ctx.drawImage(
+                catcherImg,
+                catcherBounds.imageLeft,
+                catcherBounds.imageTop,
+                catcherBounds.width,
+                catcherBounds.height
+            );
+        }
+    }
+    
+    function drawEffects() {
+        // חלקיקים
+        for (const p of particles) {
+            ctx.save();
+            ctx.globalAlpha = Math.max(0, p.alpha);
+            ctx.fillStyle = p.color;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+    
+        // טקסטים צפים
+        for (const ft of floatingTexts) {
+            ctx.save();
+            ctx.globalAlpha = Math.max(0, ft.alpha);
+            ctx.font = 'bold 17px Rubik';
+            ctx.textAlign = 'center';
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.95)';
+            ctx.strokeText(ft.text, ft.x, ft.y);
+            ctx.fillStyle = ft.color;
+            ctx.fillText(ft.text, ft.x, ft.y);
+            ctx.restore();
+        }
+    }
+    
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawBackground();
+        drawBakerAndBalcony();
+        drawPlayer();
+        drawFallingItems();
+        drawEffects();
+    }
+    
+    // לולאת האנימציה הראשית
+    function gameLoop(timestamp) {
+        if (gameState !== 'PLAYING') return;
+    
+        const dt = Math.min((timestamp - lastTime) / 1000, 0.05);
+        lastTime = timestamp;
+    
+        update(dt);
+        draw();
+    
+        if (gameState === 'PLAYING') {
+            animationFrameId = requestAnimationFrame(gameLoop);
+        }
+    }
+    
+    // התחלת משחק חדש
+    function startGame() {
+        initAudio();
+        if (animationFrameId) {
+            cancelAnimationFrame(animationFrameId);
+        }
+    
+        score = 0;
+        lives = 3;
+        fallingItems = [];
+        floatingTexts = [];
+        particles = [];
+    
+        baker.x = canvas.width / 2;
+        baker.nextThrowTimer = 0.4;
+        player.x = canvas.width / 2;
+        player.movingLeft = false;
+        player.movingRight = false;
+    
+        updateHUD();
+    
+        startScreen.classList.add('hidden');
+        gameOverScreen.classList.add('hidden');
+        hud.classList.remove('hidden');
+    
+        gameState = 'PLAYING';
+        lastTime = performance.now();
+        animationFrameId = requestAnimationFrame(gameLoop);
+    }
+    
+    // סיום משחק
+    function triggerGameOver(reasonText) {
+        gameState = 'GAMEOVER';
+        if (animationFrameId) {
+            cancelAnimationFrame(animationFrameId);
+        }
+    
+        playSound('gameover');
+        draw();
+    
+        hud.classList.add('hidden');
+        gameOverScreen.classList.remove('hidden');
+        finalScoreEl.textContent = score;
+        finalHighScoreEl.textContent = highScore;
+        if (reasonText) {
+            gameOverReasonEl.textContent = reasonText;
+        }
+    }
+    
+    // אירועי כפתורים
+    startBtn.addEventListener('click', startGame);
+    restartBtn.addEventListener('click', startGame);
+    
+    soundToggleBtn.addEventListener('click', () => {
+        soundEnabled = !soundEnabled;
+        soundToggleBtn.textContent = soundEnabled ? '🔊' : '🔇';
+        if (soundEnabled) initAudio();
+    });
+    
+    // שליטה במקלדת
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+            player.movingLeft = true;
+        } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+            player.movingRight = true;
+        }
+    });
+    
+    window.addEventListener('keyup', (e) => {
+        if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+            player.movingLeft = false;
+        } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+            player.movingRight = false;
+        }
+    });
+    
+    // שליטה בעכבר ובמגע (Touch)
+    function handlePointerMove(clientX) {
+        if (gameState !== 'PLAYING') return;
+        const rect = canvas.getBoundingClientRect();
+        const relX = clientX - rect.left;
+        player.x = Math.max(player.width / 2, Math.min(canvas.width - player.width / 2, relX));
+    }
+    
+    canvas.addEventListener('mousemove', (e) => {
+        handlePointerMove(e.clientX);
+    });
+    
+    canvas.addEventListener('touchstart', (e) => {
+        if (e.touches && e.touches.length > 0) {
+            handlePointerMove(e.touches[0].clientX);
+        }
+    }, { passive: true });
+    
+    canvas.addEventListener('touchmove', (e) => {
+        if (e.touches && e.touches.length > 0) {
+            handlePointerMove(e.touches[0].clientX);
+        }
+    }, { passive: true });
+    
+    // אתחול ראשוני של התמונות, הגודל והציור
+    updateCharacterImages();
+    resizeCanvas();
+    </script>
+    </body>
+    </html>
