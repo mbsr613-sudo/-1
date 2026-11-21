@@ -53,6 +53,23 @@
             .floating {
                 animation: float 3s ease-in-out infinite;
             }
+            #startScreen {
+                overflow-y: auto;
+                justify-content: safe center;
+            }
+            #gameOverScreen {
+                overflow-y: auto;
+                justify-content: safe center;
+            }
+            .player-choice[aria-pressed="true"] {
+                border-color: #F59E0B;
+                background-color: #FFFBEB;
+                box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+            }
+            .player-choice:focus-visible {
+                outline: 3px solid #92400E;
+                outline-offset: 2px;
+            }
         </style>
     </head>
     <body>
@@ -93,25 +110,25 @@
         </div>
     
         <!-- מסך פתיחה -->
-        <div id="startScreen" class="absolute inset-0 bg-amber-950/60 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center z-20">
-            <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border-4 border-amber-400">
-                <div class="flex items-center justify-center gap-4 mb-3 floating">
+        <div id="startScreen" class="absolute inset-0 bg-amber-950/60 backdrop-blur-sm flex flex-col items-center justify-center p-3 sm:p-4 text-center z-20">
+            <div class="bg-white rounded-3xl p-3 sm:p-6 max-w-md w-full shadow-2xl border-4 border-amber-400">
+                <div class="flex items-center justify-center gap-3 mb-2 floating">
                     <div class="relative">
-                        <img id="startThrowerImg" src="" alt="זורקת העוגיות" onerror="this.style.display='none'" class="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover border-4 border-pink-400 shadow-md bg-amber-100">
+                        <img id="startThrowerImg" src="" alt="זורקת העוגיות" onerror="this.style.display='none'" class="w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover border-4 border-pink-400 shadow-md bg-amber-100">
                         <span class="absolute -bottom-1 -right-1 text-xl bg-white rounded-full px-1 shadow">🧋</span>
                     </div>
-                    <span class="text-3xl">🍪➡️</span>
+                    <span class="text-3xl">🍪</span>
                     <div class="relative">
-                        <img id="startCatcherImg" src="" alt="תופסת העוגיות" onerror="this.style.display='none'" class="h-20 w-auto object-contain">
+                        <img id="startCatcherImg" src="" alt="תופסת העוגיות" onerror="this.style.display='none'" class="h-14 w-auto object-contain sm:h-16">
                     </div>
                 </div>
                 <h1 class="text-3xl sm:text-4xl font-extrabold text-amber-900 mb-2">תופס העוגיות!</h1>
-                <p class="text-amber-800 text-sm sm:text-base mb-4">
+                <p class="text-amber-800 text-sm sm:text-base mb-3">
                     היא נהנית מהאייס קפה במרפסת וזורקת עוגיות נוטלה בלי הפסקה! עזרו לתפוס אותן לפני שייפלו לרצפה.
                 </p>
     
                 <!-- מקרא פריטים -->
-                <div class="bg-amber-50 rounded-2xl p-3.5 mb-6 text-right border border-amber-200 space-y-2 text-sm">
+                <div class="bg-amber-50 rounded-2xl p-2 mb-3 text-right border border-amber-200 space-y-2 text-sm">
                     <div class="flex items-center justify-between">
                         <span class="flex items-center gap-2 font-semibold text-gray-900">
                             <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-900 border-2 border-red-500 shadow-inner relative">
@@ -129,12 +146,29 @@
                     </div>
                 </div>
     
-                <div class="text-xs text-gray-500 mb-4">
+                <div class="text-xs text-gray-500 mb-2">
                     🎮 שליטה: חיצי מקלדת, הזזת עכבר או גרירה באצבע
                 </div>
     
-                <div class="flex items-center justify-center gap-3 mb-3 text-amber-900" dir="rtl">
-                    <img src="copyright.jpeg" alt="מבשר ניימן" onerror="this.style.display='none'" class="w-12 h-12 shrink-0 rounded-full object-cover border-2 border-amber-300 shadow-sm">
+                <div class="mb-3">
+                    <div id="playerSelector" class="grid grid-cols-3 gap-2" role="group" aria-label="בחירת שחקן">
+                        <button type="button" class="player-choice flex min-w-0 flex-col items-center justify-center gap-0 rounded-xl border-2 border-gray-200 bg-white p-1 text-amber-900 transition-colors hover:border-amber-300 cursor-pointer" data-player="itiel" aria-pressed="false">
+                            <img src="player-itiel.png" alt="" class="h-10 w-10 rounded-full bg-amber-50 object-contain">
+                            <span class="text-xs font-bold">איתיאל</span>
+                        </button>
+                        <button type="button" class="player-choice flex min-w-0 flex-col items-center justify-center gap-0 rounded-xl border-2 border-gray-200 bg-white p-1 text-amber-900 transition-colors hover:border-amber-300 cursor-pointer" data-player="yitzhak" aria-pressed="false">
+                            <img src="player-yitzhak.png" alt="" class="h-10 w-10 rounded-full bg-amber-50 object-contain">
+                            <span class="text-xs font-bold">יצחק</span>
+                        </button>
+                        <button type="button" class="player-choice flex min-w-0 flex-col items-center justify-center gap-0 rounded-xl border-2 border-gray-200 bg-white p-1 text-amber-900 transition-colors hover:border-amber-300 cursor-pointer" data-player="reut-tahar" aria-pressed="true">
+                            <img src="player-reut-tahar.png" alt="" class="h-10 w-10 rounded-full bg-amber-50 object-contain">
+                            <span class="text-xs font-bold">רעות וטהר אוריה</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-center gap-3 mb-2 text-amber-900" dir="rtl">
+                    <img src="copyright.jpeg" alt="מבשר ניימן" class="w-10 h-10 shrink-0 rounded-full object-cover border-2 border-amber-300 shadow-sm">
                     <span class="text-xs sm:text-sm font-semibold">כל הזכויות שמורות למבשר ניימן</span>
                 </div>
                 <button id="startBtn" type="button" onclick="if(typeof startGame === 'function') startGame();" class="btn-bounce w-full bg-gradient-to-b from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-amber-950 font-extrabold text-base sm:text-lg py-3.5 px-5 rounded-2xl shadow-lg border-b-4 border-amber-700 cursor-pointer leading-snug">
@@ -163,8 +197,26 @@
                     </div>
                 </div>
     
+                <div class="mb-3">
+                    <p class="text-sm font-bold text-amber-900 mb-2">החליפו שחקן:</p>
+                    <div id="gameOverPlayerSelector" class="grid grid-cols-3 gap-2" role="group" aria-label="החלפת שחקן">
+                        <button type="button" class="player-choice flex min-w-0 flex-col items-center justify-center gap-0 rounded-xl border-2 border-gray-200 bg-white p-1 text-amber-900 transition-colors hover:border-amber-300 cursor-pointer" data-player="itiel" aria-pressed="false">
+                            <img src="player-itiel.png" alt="" class="h-10 w-10 rounded-full bg-amber-50 object-contain">
+                            <span class="text-xs font-bold">איתיאל</span>
+                        </button>
+                        <button type="button" class="player-choice flex min-w-0 flex-col items-center justify-center gap-0 rounded-xl border-2 border-gray-200 bg-white p-1 text-amber-900 transition-colors hover:border-amber-300 cursor-pointer" data-player="yitzhak" aria-pressed="false">
+                            <img src="player-yitzhak.png" alt="" class="h-10 w-10 rounded-full bg-amber-50 object-contain">
+                            <span class="text-xs font-bold">יצחק</span>
+                        </button>
+                        <button type="button" class="player-choice flex min-w-0 flex-col items-center justify-center gap-0 rounded-xl border-2 border-gray-200 bg-white p-1 text-amber-900 transition-colors hover:border-amber-300 cursor-pointer" data-player="reut-tahar" aria-pressed="true">
+                            <img src="player-reut-tahar.png" alt="" class="h-10 w-10 rounded-full bg-amber-50 object-contain">
+                            <span class="text-xs font-bold">רעות וטהר אוריה</span>
+                        </button>
+                    </div>
+                </div>
+
                 <div class="flex items-center justify-center gap-3 mb-3 text-amber-900" dir="rtl">
-                    <img src="copyright.jpeg" alt="מבשר ניימן" onerror="this.style.display='none'" class="w-12 h-12 shrink-0 rounded-full object-cover border-2 border-amber-300 shadow-sm">
+                    <img src="copyright.jpeg" alt="מבשר ניימן" class="w-12 h-12 shrink-0 rounded-full object-cover border-2 border-amber-300 shadow-sm">
                     <span class="text-xs sm:text-sm font-semibold">כל הזכויות שמורות למבשר ניימן</span>
                 </div>
                 <button id="restartBtn" type="button" class="btn-bounce w-full bg-gradient-to-b from-green-400 to-green-500 hover:from-green-500 hover:to-green-600 text-white font-extrabold text-xl py-3.5 px-6 rounded-2xl shadow-lg border-b-4 border-green-700 cursor-pointer">
@@ -182,12 +234,21 @@
         // תמונת הדמות למעלה במרפסת (זורקת העוגיות עם האייס קפה):
         thrower: 'thrower.jpeg',
     
-        // תמונת הדמות למטה (תופסת העוגיות):
-        catcher: 'catcher.png',
-    
         // תמונת הרקע של המשחק (הגבעה והחווה):
         background: 'farm-background.jpeg'
     };
+
+    const PLAYER_IMAGES = {
+        itiel: 'player-itiel.png',
+        yitzhak: 'player-yitzhak.png',
+        'reut-tahar': 'player-reut-tahar.png'
+    };
+    const PLAYER_NAMES = {
+        itiel: 'איתיאל',
+        yitzhak: 'יצחק',
+        'reut-tahar': 'רעות וטהר אוריה'
+    };
+    let selectedPlayerId = 'reut-tahar';
     // =========================================================================
     
     // אתחול אלמנטים מהדף
@@ -220,7 +281,7 @@
     
     function updateCharacterImages() {
         throwerImg.src = CHARACTER_IMAGES.thrower;
-        catcherImg.src = CHARACTER_IMAGES.catcher;
+        catcherImg.src = PLAYER_IMAGES[selectedPlayerId];
     
         let savedBg = null;
         try {
@@ -238,12 +299,41 @@
         }
         if (startCatcherEl) {
             startCatcherEl.style.display = '';
-            startCatcherEl.src = CHARACTER_IMAGES.catcher;
+            startCatcherEl.src = PLAYER_IMAGES[selectedPlayerId];
+            startCatcherEl.alt = PLAYER_NAMES[selectedPlayerId];
         }
         if (gameOverCatcherEl) {
             gameOverCatcherEl.style.display = '';
-            gameOverCatcherEl.src = CHARACTER_IMAGES.catcher;
+            gameOverCatcherEl.src = PLAYER_IMAGES[selectedPlayerId];
+            gameOverCatcherEl.alt = PLAYER_NAMES[selectedPlayerId];
         }
+    }
+
+    function selectPlayer(playerId) {
+        if (!Object.prototype.hasOwnProperty.call(PLAYER_IMAGES, playerId)) {
+            throw new Error(`Unknown player selection: ${playerId}`);
+        }
+
+        selectedPlayerId = playerId;
+        const imagePath = PLAYER_IMAGES[playerId];
+        catcherImg.src = imagePath;
+
+        const playerName = PLAYER_NAMES[playerId];
+        const startCatcherEl = document.getElementById('startCatcherImg');
+        const gameOverCatcherEl = document.getElementById('gameOverCatcherImg');
+        if (startCatcherEl) {
+            startCatcherEl.src = imagePath;
+            startCatcherEl.alt = playerName;
+        }
+        if (gameOverCatcherEl) {
+            gameOverCatcherEl.src = imagePath;
+            gameOverCatcherEl.alt = playerName;
+        }
+
+        document.querySelectorAll('.player-choice').forEach((choice) => {
+            choice.setAttribute('aria-pressed', String(choice.dataset.player === playerId));
+        });
+        draw();
     }
     
     // משתני מצב משחק
@@ -1016,6 +1106,15 @@
     }
     
     // אירועי כפתורים
+    const playerSelector = document.getElementById('playerSelector');
+    const gameOverPlayerSelector = document.getElementById('gameOverPlayerSelector');
+    [playerSelector, gameOverPlayerSelector].forEach((selector) => {
+        selector.addEventListener('click', (event) => {
+            const choice = event.target instanceof Element ? event.target.closest('.player-choice') : null;
+            if (choice) selectPlayer(choice.dataset.player);
+        });
+    });
+
     startBtn.addEventListener('click', startGame);
     restartBtn.addEventListener('click', startGame);
     
